@@ -1,0 +1,45 @@
+name: Verify Skills
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - "dist/**"
+      - "README.md"
+      - "scripts/sync-skills.js"
+
+concurrency:
+  group: verify-skills-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Rebuild skill archives and README
+        run: node scripts/sync-skills.js
+
+      - name: Check that dist/ and README.md are committed and up to date
+        run: |
+          CHANGES=$(git status --porcelain -- dist README.md)
+          if [ -n "$CHANGES" ]; then
+            echo "::error::dist/ or README.md is out of date. Run 'node scripts/sync-skills.js' (or 'npm run sync') and commit the result."
+            echo "Out-of-date paths:"
+            echo "$CHANGES"
+            git --no-pager diff -- README.md
+            exit 1
+          fi
+          echo "dist/ and README.md are in sync."
