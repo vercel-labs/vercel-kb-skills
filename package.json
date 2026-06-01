@@ -1,0 +1,12 @@
+{
+  "name": "vercel-kb-skills",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent Skills that pair with Vercel Knowledge Base guides.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/vercel-labs/vercel-kb-skills",
+  "scripts": {
+    "sync": "node scripts/sync-skills.js"
+  }
+}
