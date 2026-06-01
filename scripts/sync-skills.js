@@ -27,7 +27,6 @@
 import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deflateRawSync } from "node:zlib";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, "..");
@@ -201,8 +200,10 @@ function crc32(buffer) {
   return (crc ^ 0xff_ff_ff_ff) >>> 0;
 }
 
-// Builds a minimal ZIP archive (DEFLATE compressed, no timestamps) from a list
-// of { name, data } entries. Deterministic output for the same inputs.
+// Builds a minimal ZIP archive from a list of { name, data } entries. Files are
+// stored uncompressed (no DEFLATE) with zeroed timestamps, so the output is
+// byte-for-byte reproducible across platforms and Node/zlib versions — which is
+// what lets CI verify the committed archives without false drift.
 function createZip(entries) {
   const localParts = [];
   const centralParts = [];
@@ -211,34 +212,34 @@ function createZip(entries) {
   for (const entry of entries) {
     const nameBuffer = Buffer.from(entry.name, "utf-8");
     const crc = crc32(entry.data);
-    const compressed = deflateRawSync(entry.data, { level: 9 });
+    const size = entry.data.length;
 
     const localHeader = Buffer.alloc(30);
     localHeader.writeUInt32LE(0x04_03_4b_50, 0); // local file header signature
     localHeader.writeUInt16LE(20, 4); // version needed to extract
     localHeader.writeUInt16LE(0, 6); // general purpose bit flag
-    localHeader.writeUInt16LE(8, 8); // compression method: deflate
+    localHeader.writeUInt16LE(0, 8); // compression method: store (none)
     localHeader.writeUInt16LE(0, 10); // last mod file time
     localHeader.writeUInt16LE(0, 12); // last mod file date
     localHeader.writeUInt32LE(crc, 14); // crc-32
-    localHeader.writeUInt32LE(compressed.length, 18); // compressed size
-    localHeader.writeUInt32LE(entry.data.length, 22); // uncompressed size
+    localHeader.writeUInt32LE(size, 18); // compressed size
+    localHeader.writeUInt32LE(size, 22); // uncompressed size
     localHeader.writeUInt16LE(nameBuffer.length, 26); // file name length
     localHeader.writeUInt16LE(0, 28); // extra field length
 
-    localParts.push(localHeader, nameBuffer, compressed);
+    localParts.push(localHeader, nameBuffer, entry.data);
 
     const centralHeader = Buffer.alloc(46);
     centralHeader.writeUInt32LE(0x02_01_4b_50, 0); // central dir header signature
     centralHeader.writeUInt16LE(20, 4); // version made by
     centralHeader.writeUInt16LE(20, 6); // version needed to extract
     centralHeader.writeUInt16LE(0, 8); // general purpose bit flag
-    centralHeader.writeUInt16LE(8, 10); // compression method
+    centralHeader.writeUInt16LE(0, 10); // compression method: store (none)
     centralHeader.writeUInt16LE(0, 12); // last mod file time
     centralHeader.writeUInt16LE(0, 14); // last mod file date
     centralHeader.writeUInt32LE(crc, 16); // crc-32
-    centralHeader.writeUInt32LE(compressed.length, 20); // compressed size
-    centralHeader.writeUInt32LE(entry.data.length, 24); // uncompressed size
+    centralHeader.writeUInt32LE(size, 20); // compressed size
+    centralHeader.writeUInt32LE(size, 24); // uncompressed size
     centralHeader.writeUInt16LE(nameBuffer.length, 28); // file name length
     centralHeader.writeUInt16LE(0, 30); // extra field length
     centralHeader.writeUInt16LE(0, 32); // file comment length
@@ -249,7 +250,7 @@ function createZip(entries) {
 
     centralParts.push(centralHeader, nameBuffer);
 
-    offset += localHeader.length + nameBuffer.length + compressed.length;
+    offset += localHeader.length + nameBuffer.length + entry.data.length;
   }
 
   const centralDirectory = Buffer.concat(centralParts);
