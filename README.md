@@ -7,6 +7,7 @@ A collection of Agent Skills that pair with [Vercel Knowledge Base](https://verc
 <!-- START:Available-Skills -->
 | Skill | What it does | Companion guide | Download |
 | --- | --- | --- | --- |
+| [`astro-webflow-to-vercel`](./skills/astro-webflow-to-vercel) | Migrate an Astro app from Webflow Cloud to Vercel | [Read the guide](https://vercel.com/kb/guide/migrate-an-astro-app-from-webflow-cloud-to-vercel) | [`astro-webflow-to-vercel.skill`](https://raw.githubusercontent.com/vercel-labs/vercel-kb-skills/main/dist/astro-webflow-to-vercel.skill) |
 | [`tanstack-start-cloudflare-to-vercel`](./skills/tanstack-start-cloudflare-to-vercel) | Migrate a TanStack Start app from Cloudflare Workers to Vercel | [Read the guide](https://vercel.com/kb/guide/migrate-a-tanstack-start-app-from-cloudflare-to-vercel) | [`tanstack-start-cloudflare-to-vercel.skill`](https://raw.githubusercontent.com/vercel-labs/vercel-kb-skills/main/dist/tanstack-start-cloudflare-to-vercel.skill) |
 | [`tanstack-start-netlify-to-vercel`](./skills/tanstack-start-netlify-to-vercel) | Migrate a TanStack Start app from Netlify to Vercel | [Read the guide](https://vercel.com/kb/guide/migrate-a-tanstack-start-app-from-netlify-to-vercel) | [`tanstack-start-netlify-to-vercel.skill`](https://raw.githubusercontent.com/vercel-labs/vercel-kb-skills/main/dist/tanstack-start-netlify-to-vercel.skill) |
 <!-- END:Available-Skills -->
